@@ -27,6 +27,7 @@ static const CGFloat kAnchorViewWidth = 1000;
 @property (strong, nonatomic) UIAttachmentBehavior *viewToAnchorViewAttachmentBehavior;
 @property (strong, nonatomic) UIAttachmentBehavior *anchorViewToPointAttachmentBehavior;
 @property (strong, nonatomic) UIPushBehavior *pushBehavior;
+@property (strong, nonatomic) UIDynamicItemBehavior *resistanceDrag;
 
 @end
 
@@ -73,6 +74,9 @@ static const CGFloat kAnchorViewWidth = 1000;
     if (_anchorViewToPointAttachmentBehavior) {
         [_animator removeBehavior:_anchorViewToPointAttachmentBehavior];
     }
+    if(_resistanceDrag) {
+        [_animator removeBehavior:_resistanceDrag];
+    }
     if (_pushBehavior) {
         [_animator removeBehavior:_pushBehavior];
     }
@@ -87,6 +91,7 @@ static const CGFloat kAnchorViewWidth = 1000;
     if (!_swipeableView) {
         return;
     }
+    
     CGPoint translation = [recognizer translationInView:_containerView];
     CGPoint location = [recognizer locationInView:_containerView];
     CGPoint velocity = [recognizer velocityInView:_containerView];
@@ -205,8 +210,15 @@ static const CGFloat kAnchorViewWidth = 1000;
     _anchorViewToPointAttachmentBehavior = [[UIAttachmentBehavior alloc] initWithItem:_anchorView
                                                                      offsetFromCenter:UIOffsetZero
                                                                      attachedToAnchor:point];
-    _anchorViewToPointAttachmentBehavior.damping = 100;
+    _anchorViewToPointAttachmentBehavior.damping = 0;
+    _anchorViewToPointAttachmentBehavior.frequency = 300;
     _anchorViewToPointAttachmentBehavior.length = 0;
+    
+    
+    _resistanceDrag = [[UIDynamicItemBehavior alloc] initWithItems:@[_anchorView]];
+    _resistanceDrag.resistance = 600.0;
+    [self.animator addBehavior:_resistanceDrag];
+    
 
     [self addBehavior:_viewToAnchorViewAttachmentBehavior];
     [self addBehavior:_anchorViewToPointAttachmentBehavior];
@@ -225,6 +237,7 @@ static const CGFloat kAnchorViewWidth = 1000;
     }
     [self removeBehavior:_viewToAnchorViewAttachmentBehavior];
     [self removeBehavior:_anchorViewToPointAttachmentBehavior];
+    [self removeBehavior:_resistanceDrag];
 }
 
 - (void)pushViewFromPoint:(CGPoint)point inDirection:(CGVector)direction {
@@ -233,7 +246,7 @@ static const CGFloat kAnchorViewWidth = 1000;
     }
 
     [self removeBehavior:_anchorViewToPointAttachmentBehavior];
-
+    [self removeBehavior:_resistanceDrag];
     _pushBehavior = [[UIPushBehavior alloc] initWithItems:@[ _anchorView ]
                                                      mode:UIPushBehaviorModeInstantaneous];
     _pushBehavior.pushDirection = direction;
